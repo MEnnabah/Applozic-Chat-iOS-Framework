@@ -78,6 +78,12 @@
                                     UIAlertViewDelegate, ALMUltipleAttachmentDelegate, UIDocumentInteractionControllerDelegate,
                                     ABPeoplePickerNavigationControllerDelegate, ALSoundRecorderProtocol>
 
+//============Session Timer Properties====================================//
+@property (nonatomic) NSTimer* timer;
+@property (nonatomic) int timeRemaining;
+@property (nonatomic) UILabel* sessionTimer;
+
+
 @property (nonatomic, assign) NSInteger startIndex;
 @property (nonatomic, assign) int rp;
 @property (nonatomic, assign) NSUInteger mTotalCount;
@@ -179,6 +185,8 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateVOIPMsg)
                                                  name:@"UPDATE_VOIP_MSG" object:nil];
+    
+    [self configureTimerUI];
 }
 
 -(void)viewDidAppear:(BOOL)animated
@@ -370,6 +378,55 @@
     [self loadMessagesForOpenChannel];
 }
 
+- (void)timerRunning
++
+{
+    self.timeRemaining -= 1;
+    
+    int minutesLeft = (self.timeRemaining / 60 % 60);
+    int secondsLeft = (self.timeRemaining % 60);
+    NSString* minutes = @"";
+    NSString* seconds = @"";
+    
+    if (minutesLeft < 10) {
+        minutes = [NSString stringWithFormat:@"0%d", minutesLeft];
+    } else {
+        minutes = [NSString stringWithFormat:@"%d", minutesLeft];
+    }
+    
+    if (secondsLeft < 10) {
+        seconds = [NSString stringWithFormat:@"0%d", secondsLeft];
+        
+    } else {
+        seconds = [NSString stringWithFormat:@"%d", secondsLeft];
+    }
+    
+    self.sessionTimer.text = [NSString stringWithFormat:@"%@:%@",minutes,seconds];
+}
+
+- (void)configureTimerUI
+{
+    
+    self.timeRemaining = 900;
+    
+    self.sessionTimer = [[UILabel alloc] init];
+    self.sessionTimer.backgroundColor = [[UIColor alloc] initWithRed:(233/255.0) green:(179/255.0) blue:(29/255.0) alpha:1.0];
+    self.sessionTimer.textColor = UIColor.whiteColor;
+    self.sessionTimer.font = [UIFont boldSystemFontOfSize:16];
+    self.sessionTimer.textAlignment = NSTextAlignmentCenter;
+    self.sessionTimer.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.sessionTimer];
+    [self.sessionTimer.topAnchor constraintEqualToAnchor: self.view.topAnchor].active = YES;
+    [self.sessionTimer.leftAnchor constraintEqualToAnchor: self.view.leftAnchor].active = YES;
+    [self.sessionTimer.rightAnchor constraintEqualToAnchor: self.view.rightAnchor].active = YES;
+    [self.sessionTimer.heightAnchor constraintEqualToConstant:50].active = YES;
+    
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timerRunning) userInfo:nil repeats:YES];
+    
+    
+    [self.navigationItem setHidesBackButton:YES];
+}
+
 -(void)setFreezeForAddingRemovingUser:(NSNotification *)notifyObject
 {
     NSMutableDictionary * dict = (NSMutableDictionary *)notifyObject.userInfo;
@@ -475,6 +532,8 @@
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"USER_DETAILS_UPDATE_CALL" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"UPDATE_VOIP_MSG" object:nil];
+    
+    [self.timer invalidate];
 }
 
 -(void)updateVOIPMsg
