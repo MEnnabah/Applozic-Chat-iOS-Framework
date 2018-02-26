@@ -120,6 +120,65 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
 
 }
 
+- (UIViewController *)topViewController:(UIViewController *)rootViewController
+{
+    if (rootViewController.presentedViewController == nil) {
+        return rootViewController;
+    }
+    
+    if ([rootViewController.presentedViewController isMemberOfClass:[UINavigationController class]]) {
+        UINavigationController *navigationController = (UINavigationController *)rootViewController.presentedViewController;
+        UIViewController *lastViewController = [[navigationController viewControllers] lastObject];
+        return [self topViewController:lastViewController];
+    }
+    
+    UIViewController *presentedViewController = (UIViewController *)rootViewController.presentedViewController;
+    return [self topViewController:presentedViewController];
+}
+
+-(void)dismissSelf
+{
+    UIViewController* chatVC = [self topViewController:[UIApplication sharedApplication].keyWindow.rootViewController];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [chatVC dismissViewControllerAnimated:YES completion:nil];
+    });
+}
+
+-(void)didTapEndChat:(id)sender {
+    
+    
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"End Chat Session" message:@"Are you sure you want to end the current chat session?" preferredStyle:(UIAlertControllerStyleAlert)];
+    
+    
+    UIAlertAction* cancel = [UIAlertAction actionWithTitle:@"Continue Chating" style:(UIAlertActionStyleDefault) handler:nil];
+    UIAlertAction* cancelChat = [UIAlertAction actionWithTitle:@"End Session" style:(UIAlertActionStyleDestructive) handler:^(UIAlertAction * _Nonnull action) {
+        [self dismissSelf];
+    }];
+    
+    [alert addAction:cancel];
+    [alert addAction:cancelChat];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+-(UIView*)setCustomEndChatButton
+{
+    UIView* endChatView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 80, 50)];
+    endChatView.backgroundColor = UIColor.clearColor;
+    
+    UIButton* endChatBtn = [[UIButton alloc] init];
+    endChatBtn.frame = endChatView.bounds;
+    [endChatBtn setTitle:@"End Session" forState:UIControlStateNormal];
+    endChatBtn.titleLabel.font = [UIFont systemFontOfSize:14];
+    [endChatBtn setTitleColor:UIColor.whiteColor forState:(UIControlStateNormal)];
+    endChatBtn.titleLabel.textAlignment = NSTextAlignmentCenter;
+    [endChatBtn addTarget:self action:@selector(didTapEndChat:) forControlEvents:(UIControlEventTouchUpInside)];
+    
+    [endChatView addSubview:endChatBtn];
+    
+    return endChatView;
+}
+
 -(void)setUpTheming
 {
     
@@ -128,11 +187,14 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
                                                                                     target:self action:@selector(refreshTable:)];
     
     self.callButton = [[UIBarButtonItem alloc] initWithCustomView:[self customCallButtonView]];
+    UIBarButtonItem* endChatButton = [[UIBarButtonItem alloc] initWithCustomView:[self setCustomEndChatButton]];
     
-    if(self.individualLaunch)
-    {
-        [self.navigationItem setLeftBarButtonItem:barButtonItem];
-    }
+    [self.navigationItem setLeftBarButtonItem:endChatButton];
+    
+//    if(self.individualLaunch)
+//    {
+//        [self.navigationItem setLeftBarButtonItem:barButtonItem];
+//    }
     
     self.navRightBarButtonItems = [NSMutableArray new];
 
