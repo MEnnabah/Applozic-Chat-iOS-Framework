@@ -379,7 +379,6 @@
 }
 
 - (void)timerRunning
-+
 {
     self.timeRemaining -= 1;
     
