@@ -153,6 +153,11 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
     UIAlertAction* cancel = [UIAlertAction actionWithTitle:@"Continue Chating" style:(UIAlertActionStyleDefault) handler:nil];
     UIAlertAction* cancelChat = [UIAlertAction actionWithTitle:@"End Session" style:(UIAlertActionStyleDestructive) handler:^(UIAlertAction * _Nonnull action) {
         [self dismissSelf];
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"SessionDidEndNotification"
+                                                            object:self
+                                                          userInfo:nil];
+        
     }];
     
     [alert addAction:cancel];

@@ -403,6 +403,10 @@
                 [nc.viewControllers.lastObject presentViewController:alert animated:YES completion:nil];
             });
             
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"SessionDidEndNotification"
+                                                                object:self
+                                                              userInfo:nil];
+            
             [[NSUserDefaults standardUserDefaults] removeObjectForKey:sessionEndDateCachingKey];
         }];
         
