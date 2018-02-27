@@ -80,7 +80,6 @@
 
 //============Session Timer Properties====================================//
 @property (nonatomic) NSTimer* timer;
-@property (nonatomic) int timeRemaining;
 @property (nonatomic) UILabel* sessionTimer;
 
 
@@ -380,35 +379,49 @@
 
 - (void)timerRunning
 {
-    self.timeRemaining -= 1;
     
-    int minutesLeft = (self.timeRemaining / 60 % 60);
-    int secondsLeft = (self.timeRemaining % 60);
-    NSString* minutes = @"";
-    NSString* seconds = @"";
+    NSString *sessionEndDateCachingKey = @"ELawyerSessionEndDate";
     
-    if (minutesLeft < 10) {
-        minutes = [NSString stringWithFormat:@"0%d", minutesLeft];
-    } else {
-        minutes = [NSString stringWithFormat:@"%d", minutesLeft];
-    }
+    id endDateTimeInterval = [[NSUserDefaults standardUserDefaults] objectForKey:sessionEndDateCachingKey];
     
-    if (secondsLeft < 10) {
-        seconds = [NSString stringWithFormat:@"0%d", secondsLeft];
+    NSTimeInterval sessionEndDate;
+    sessionEndDate = [endDateTimeInterval doubleValue];
+    
+    NSDate *date = [[NSDate alloc] init];
+    NSTimeInterval now = [date timeIntervalSince1970];
+    UINavigationController *nc = (UINavigationController*)UIApplication.sharedApplication.keyWindow.rootViewController;
+    UINavigationController *presentedNC = (UINavigationController*)nc.presentedViewController;
+    
+    if (now > sessionEndDate) {
+        
+        [self.timer invalidate];
+        [presentedNC dismissViewControllerAnimated:YES completion:^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Session Ended" message:@"Your session has been ended." preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertAction* okAction = [UIAlertAction actionWithTitle:@"Okay" style:(UIAlertActionStyleDefault) handler:nil];
+            [alert addAction:okAction];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [nc.viewControllers.lastObject presentViewController:alert animated:YES completion:nil];
+            });
+            
+            [[NSUserDefaults standardUserDefaults] removeObjectForKey:sessionEndDateCachingKey];
+        }];
         
     } else {
-        seconds = [NSString stringWithFormat:@"%d", secondsLeft];
+        // show date in label
+        NSDate *unformattedDate = [NSDate dateWithTimeIntervalSince1970: (sessionEndDate - now)];
+        NSDateFormatter *formatter = [NSDateFormatter new];
+        formatter.dateFormat = @"mm:ss";
+        NSString *formattedDate = [formatter stringFromDate:unformattedDate];
+        
+        self.sessionTimer.text = [NSString stringWithFormat:@"%@", formattedDate];
     }
-    
-    self.sessionTimer.text = [NSString stringWithFormat:@"%@:%@",minutes,seconds];
 }
 
 - (void)configureTimerUI
 {
     
-    self.timeRemaining = 900;
-    
     self.sessionTimer = [[UILabel alloc] init];
+    self.sessionTimer.text = @"15:00";
     self.sessionTimer.backgroundColor = [[UIColor alloc] initWithRed:(233/255.0) green:(179/255.0) blue:(29/255.0) alpha:1.0];
     self.sessionTimer.textColor = UIColor.whiteColor;
     self.sessionTimer.font = [UIFont boldSystemFontOfSize:16];
